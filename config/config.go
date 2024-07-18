@@ -9,11 +9,14 @@ import (
 )
 
 type config struct {
-	Env      string `mapstructure:"ENV"`
-	Port     string `mapstructure:"PORT"`
-	Dsn      string `mapstructure:"DSN"`
-	MeteoUrl string `mapstructure:"METEOSOURCE_URL"`
-	MeteoKey string `mapstructure:"METEOSOURCE_API_KEY"`
+	Env           string `mapstructure:"ENV"`
+	Port          string `mapstructure:"PORT"`
+	Dsn           string `mapstructure:"DSN"`
+	RedisAddr     string `mapstructure:"REDIS_ADDR"`
+	RedisUsername string `mapstructure:"REDIS_USERNAME"`
+	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
+	MeteoUrl      string `mapstructure:"METEOSOURCE_URL"`
+	MeteoKey      string `mapstructure:"METEOSOURCE_API_KEY"`
 }
 
 var cfg *config

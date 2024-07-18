@@ -6,11 +6,24 @@ import (
 	"github.com/google/uuid"
 )
 
+type Cities struct {
+	ID        uuid.UUID  `json:"id"`
+	Name      string     `json:"name"`
+	Lat       float32    `json:"lat"`
+	Lon       float32    `json:"lon"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+	DeletedAt *time.Time `json:"deleted_at,omitempty"`
+}
+
+func (Cities) TableName() string {
+	return "cities"
+}
+
 type Weathers struct {
-	ID                 uuid.UUID  `json:"id"`
-	City               string     `json:"city"`
-	Lat                float32    `json:"lat"`
-	Lon                float32    `json:"lon"`
+	ID                 int64      `json:"id"`
+	Date               string     `json:"date"`
+	CityID             string     `json:"city_id"`
 	Summary            *string    `json:"summary"`
 	Temperature        *float32   `json:"temperature"`
 	WindSpeed          *float32   `json:"wind_speed"`

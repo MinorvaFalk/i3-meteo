@@ -1,4 +1,6 @@
-package model
+package meteo
+
+import "encoding/json"
 
 type Weather struct {
 	Lat       string         `json:"lat"`
@@ -13,6 +15,10 @@ type Weather struct {
 	Daily struct {
 		Data []WeatherDaily `json:"data"`
 	} `json:"daily"`
+}
+
+func (w Weather) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(w)
 }
 
 type WeatherCurrent struct {

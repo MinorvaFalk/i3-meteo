@@ -1,34 +1,46 @@
 package meteo
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"i3/config"
-	"i3/internal/model"
+	"i3/pkg/datasource"
+	"i3/pkg/logger"
 	"net/http"
-	"net/url"
 	"time"
 )
 
-type Meteo struct {
+type Meteo interface {
+	FetchLocationWeather(id, lat, lon string) (*Weather, error)
+	FetchNearestPlace(lat, lon string) (*Place, error)
+}
+
+type meteo struct {
 	client *http.Client
 	url    string
 	key    string
+	redis  datasource.Redis
 }
 
-func New() *Meteo {
+func New(redis datasource.Redis) Meteo {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
 
-	return &Meteo{
+	return &meteo{
 		client: client,
 		url:    config.ReadConfig().MeteoUrl,
 		key:    config.ReadConfig().MeteoKey,
+		redis:  redis,
 	}
 }
 
-func (m *Meteo) FetchLocationWeather(lat, lon string) (*model.Weather, error) {
+func (m *meteo) FetchLocationWeather(id, lat, lon string) (*Weather, error) {
+	var data Weather
+	if err := m.checkRedisCache(id, &data); err == nil {
+		return &data, nil
+	}
+
 	req, err := http.NewRequest(http.MethodGet, m.url+"/point", nil)
 	if err != nil {
 		return nil, err
@@ -39,19 +51,17 @@ func (m *Meteo) FetchLocationWeather(lat, lon string) (*model.Weather, error) {
 	q.Add("lon", lon)
 	req.URL.RawQuery = q.Encode()
 
-	var data model.Weather
-	if err := m.doRequest(req, &data); err != nil {
+	exp, err := m.doRequest(req, &data)
+	if err != nil {
 		return nil, err
 	}
+
+	m.mustSaveRedisCache(id, data, exp)
 
 	return &data, nil
 }
 
-func (m *Meteo) FetchAirQuality(lat, lon string) (*model.Air, error) {
-	panic(fmt.Errorf("method not implemented"))
-}
-
-func (m *Meteo) FetchNearestPlace(lat, lon string) (*model.Place, error) {
+func (m *meteo) FetchNearestPlace(lat, lon string) (*Place, error) {
 	req, err := http.NewRequest(http.MethodGet, m.url+"/nearest_place", nil)
 	if err != nil {
 		return nil, err
@@ -62,36 +72,30 @@ func (m *Meteo) FetchNearestPlace(lat, lon string) (*model.Place, error) {
 	q.Add("lon", lat)
 	req.URL.RawQuery = q.Encode()
 
-	var data model.Place
-	if err := m.doRequest(req, &data); err != nil {
+	var data Place
+	_, err = m.doRequest(req, &data)
+	if err != nil {
 		return nil, err
 	}
 
 	return &data, nil
 }
 
-func (m *Meteo) doRequest(req *http.Request, v any) error {
-	res, err := m.client.Do(req)
+func (m *meteo) checkRedisCache(key string, v any) error {
+	res, err := m.redis.Get(context.Background(), key)
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("http request failed with status code: %v", res.StatusCode)
-	}
-
-	if err := json.NewDecoder(res.Body).Decode(v); err != nil {
+	if err := json.Unmarshal([]byte(res), v); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *Meteo) setDefaultParams(q url.Values) url.Values {
-	q.Add("key", m.key)
-	q.Add("units", "metric")
-	q.Add("language", "en")
-
-	return q
+func (m *meteo) mustSaveRedisCache(key string, v any, exp time.Duration) {
+	if _, err := m.redis.Set(context.Background(), key, v, exp); err != nil {
+		logger.Zap().Sugar().Error(err)
+	}
 }

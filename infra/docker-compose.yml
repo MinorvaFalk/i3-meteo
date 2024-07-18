@@ -1,0 +1,64 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=database
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - private
+    restart: on-failure:2
+
+  init:
+    image: i3-meteo:0.0.0
+    build: .
+    environment:
+      - GOOSE_DRIVER=postgres
+      - GOOSE_DBSTRING=postgresql://root:root@postgres:5432/database
+    command: /migrate -dir=/data/migrations up
+    networks:
+      - private
+    depends_on:
+      - postgres
+    restart: on-failure
+
+  redis:
+    image: redis:alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - private
+    restart: on-failure
+
+  api:
+    image: i3-meteo:0.0.0
+    build: .
+    command: /api
+    environment:
+      - ENV=development
+      - PORT=8080
+      - DSN=postgresql://root:root@postgres:5432/database
+      - REDIS_ADDR=redis:6379
+      - REDIS_USERNAME=
+      - REDIS_PASSWORD=
+      - METEOSOURCE_URL=https://www.meteosource.com/api/v1/free
+      - METEOSOURCE_API_KEY=${METEOSOURCE_API_KEY}
+    ports:
+      - 8080:8080
+    networks:
+      - private
+    depends_on:
+      - init
+      - redis
+    restart: on-failure
+
+networks:
+  private:
+
+volumes:
+  redis_data:
+  postgres_data:

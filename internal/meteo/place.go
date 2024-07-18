@@ -1,4 +1,4 @@
-package model
+package meteo
 
 type Place struct {
 	Name     string `json:"name"`
