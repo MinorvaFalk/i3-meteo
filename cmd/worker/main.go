@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"i3/config"
+	apirepository "i3/internal/api/repository"
 	"i3/internal/meteo"
-	"i3/internal/repository"
 	"i3/internal/scheduler"
 	"i3/pkg/datasource"
 	"i3/pkg/logger"
@@ -25,9 +25,10 @@ func init() {
 
 func main() {
 	pg := datasource.NewPgx(ctx)
-	repo := repository.New(pg)
+	redis := datasource.NewRedis()
+	repo := apirepository.New(pg)
 
-	meteo := meteo.New()
+	meteo := meteo.New(redis)
 	s := scheduler.New()
 
 	s.ScheduleJob(1*time.Minute, scheduler.NewWeatherJob(meteo, repo))

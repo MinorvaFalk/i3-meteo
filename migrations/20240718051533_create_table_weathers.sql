@@ -2,9 +2,8 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS weathers (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    city varchar(100) NOT NULL,
-    lat decimal(11, 7) NOT NULL,
-    lon decimal(11, 7) NOT NULL,
+    date varchar(20),
+    city_id uuid NOT NULL,
     summary varchar(255),
     temperature real,
     wind_speed real,
@@ -15,7 +14,10 @@ CREATE TABLE IF NOT EXISTS weathers (
     cloud_cover numeric,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
-    deleted_at timestamptz
+    deleted_at timestamptz,
+    UNIQUE (date, city_id),
+    CONSTRAINT fk_city_id FOREIGN KEY (city_id) REFERENCES cities (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 );
 -- +goose StatementEnd
 

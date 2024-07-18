@@ -1,4 +1,4 @@
-package model
+package meteo
 
 import "math/big"
 

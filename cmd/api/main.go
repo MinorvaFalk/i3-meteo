@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
-	"flag"
 	"i3/config"
-	"i3/internal/http_handler"
-	"i3/internal/repository"
+	apicontroller "i3/internal/api/controller"
+	apirepository "i3/internal/api/repository"
+	apiusecase "i3/internal/api/usecase"
+	"i3/internal/meteo"
+	"i3/internal/scheduler"
 	"i3/pkg/datasource"
 	"i3/pkg/logger"
 	"i3/pkg/router"
+	"time"
 )
 
 var (
@@ -21,17 +24,26 @@ func InitConfig() {
 }
 
 func main() {
-	flag.Parse()
-
 	pg := datasource.NewPgx(ctx)
+	repo := apirepository.New(pg)
+	uc := apiusecase.New(repo)
+	ctrl := apicontroller.New(uc)
 
-	repo := repository.New(pg)
-	httpHandler := http_handler.New(repo)
-	r := router.NewGin(httpHandler)
+	// Scheduler
+	redis := datasource.NewRedis()
+	meteo := meteo.New(redis)
 
+	s := scheduler.New()
+	s.ScheduleJob(1*time.Minute, scheduler.NewWeatherJob(meteo, repo))
+	s.Start()
+
+	// Router
+	r := router.NewGin(ctrl)
 	r.Run(":" + config.ReadConfig().Port)
 
-	// Graceful shutdown implementation
+	s.Stop()
+
+	// Graceful implementation
 
 	// srv := &http.Server{
 	// 	Addr:    ":" + config.ReadConfig().Port,
