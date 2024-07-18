@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=root
+      - POSTGRES_DB=database
+    networks:
+      - private
+
+  init:
+    image: i3-meteo:0.0.0
+    build: .
+    environment:
+      - GOOSE_DRIVER=postgres
+      - GOOSE_DBSTRING=postgresql://root:root@postgres:5432/database
+    command: /migrate -dir=/data/migrations up
+    networks:
+      - private
+    depends_on:
+      - postgres
+
+  api:
+    image: i3-meteo:0.0.0
+    build: .
+    command: /api
+    environment:
+      - ENV=development
+      - PORT=8080
+      - DSN=postgresql://root:root@postgres:5432/database
+    ports:
+      - 8080:8080
+    networks:
+      - private
+    depends_on:
+      - init
+
+  worker:
+    image: i3-meteo:0.0.0
+    build: .
+    command: /worker
+    environment:
+      - ENV=development
+      - DSN=postgresql://root:root@postgres:5432/database
+      - METEOSOURCE_URL=https://www.meteosource.com/api/v1/free
+      - METEOSOURCE_API_KEY=c6mt4n1gaomdan69qxkflm5fqmjlh3cqplhfr2cp
+    networks:
+      - private
+    depends_on:
+      - init
+
+networks:
+  private:
