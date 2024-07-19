@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS weathers (
     wind_dir varchar(3),
     precipitation_total real,
     precipitation_type varchar(15),
-    cloud_cover numeric,
+    cloud_cover real,
     created_at timestamptz DEFAULT now(),
     updated_at timestamptz DEFAULT now(),
     deleted_at timestamptz,

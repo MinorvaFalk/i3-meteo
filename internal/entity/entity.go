@@ -31,7 +31,7 @@ type Weathers struct {
 	WindDir            *string    `json:"wind_dir"`
 	PrecipitationTotal *float32   `json:"precipitation_total"`
 	PrecipitationType  *string    `json:"precipitation_type"`
-	CloudCover         *int       `json:"cloud_cover"`
+	CloudCover         *float32   `json:"cloud_cover"`
 	CreatedAt          time.Time  `json:"created_at"`
 	UpdatedAt          time.Time  `json:"updated_at"`
 	DeletedAt          *time.Time `json:"deleted_at,omitempty"`

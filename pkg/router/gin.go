@@ -29,6 +29,7 @@ func NewGin(controller api.Controller) *gin.Engine {
 	v1 := r.Group("/api/v1")
 
 	v1.GET("/weathers", controller.FetchWeathersData)
+	v1.GET("/cities", controller.FetchCities)
 
 	schedule := v1.Group("/schedule")
 	schedule.POST("/location", controller.ScheduleLocationData)

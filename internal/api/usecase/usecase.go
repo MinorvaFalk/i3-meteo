@@ -3,6 +3,7 @@ package apiusecase
 import (
 	"context"
 	"i3/internal/api"
+	"i3/internal/entity"
 	"i3/internal/model"
 )
 
@@ -22,4 +23,8 @@ func (u *usecase) ScheduleLocationData(ctx context.Context, req model.CityReques
 
 func (u *usecase) FetchWeatherData(ctx context.Context) ([]*model.WeatherData, error) {
 	return u.repo.FetchWeatherData(ctx)
+}
+
+func (u *usecase) FetchCities(ctx context.Context) ([]*entity.Cities, error) {
+	return u.repo.FetchCities(ctx)
 }

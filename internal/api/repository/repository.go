@@ -2,6 +2,7 @@ package apirepository
 
 import (
 	"context"
+	"fmt"
 	"i3/internal/api"
 	"i3/internal/entity"
 	"i3/internal/model"
@@ -16,6 +17,25 @@ type repository struct {
 
 func New(db datasource.Postgres) api.Repository {
 	return &repository{db: db}
+}
+
+func (s *repository) UpdateCityCoordinate(ctx context.Context, id string, lat float32, lon float32) (err error) {
+	query := `UPDATE cities SET
+		lat = $2,
+		lon = $3,
+		updated_at = now()
+	WHERE id = $1`
+
+	cmd, err := s.db.Exec(ctx, query, id, lat, lon)
+	if err != nil {
+		return err
+	}
+
+	if cmd.RowsAffected() == 0 {
+		return fmt.Errorf("data not updated")
+	}
+
+	return nil
 }
 
 func (s *repository) InsertCity(ctx context.Context, req model.CityRequest) (data model.ScheduleLocationData, err error) {
