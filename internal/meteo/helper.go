@@ -1,19 +1,42 @@
 package meteo
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"i3/pkg/logger"
 	"net/http"
-	"net/url"
 	"time"
 )
 
-func (m *meteo) setDefaultParams(q url.Values) url.Values {
-	q.Add("key", m.key)
-	q.Add("units", "metric")
-	q.Add("language", "en")
+func (m *meteo) fetchMeteoData(redisKey, path string, params map[string]string, v any) error {
+	// Check for redis cache
+	if err := m.checkRedisCache(redisKey, v); err == nil {
+		return nil
+	}
 
-	return q
+	// Create HTTP Request
+	req, err := http.NewRequest(http.MethodGet, m.url+path, nil)
+	if err != nil {
+		return nil
+	}
+
+	q := req.URL.Query()
+	q.Add("key", m.key)
+	q.Add("language", "en")
+	for key, value := range params {
+		q.Add(key, value)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	exp, err := m.doRequest(req, v)
+	if err != nil {
+		return err
+	}
+
+	m.mustSaveRedisCache(redisKey, v, exp)
+
+	return nil
 }
 
 func (m *meteo) doRequest(req *http.Request, v any) (expiresIn time.Duration, err error) {
@@ -43,4 +66,23 @@ func (m *meteo) doRequest(req *http.Request, v any) (expiresIn time.Duration, er
 	expiresIn = time.Until(local)
 
 	return
+}
+
+func (m *meteo) checkRedisCache(key string, v any) error {
+	res, err := m.redis.Get(context.Background(), key)
+	if err != nil {
+		return err
+	}
+
+	if err := json.Unmarshal([]byte(res), v); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *meteo) mustSaveRedisCache(key string, v any, exp time.Duration) {
+	if _, err := m.redis.Set(context.Background(), key, v, exp); err != nil {
+		logger.Zap().Sugar().Error(err)
+	}
 }

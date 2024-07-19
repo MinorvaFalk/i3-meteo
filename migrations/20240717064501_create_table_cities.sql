@@ -13,5 +13,5 @@ CREATE TABLE IF NOT EXISTS cities (
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE IF EXISTS city;
+DROP TABLE IF EXISTS cities;
 -- +goose StatementEnd

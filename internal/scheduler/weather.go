@@ -30,17 +30,22 @@ func (j *WeatherJob) Run() {
 
 	cities, err := j.repo.FetchCities(ctx)
 	if err != nil {
-		panic(err)
+		logger.Zap().Error("weather_job", zap.Error(err))
+	}
+
+	if len(cities) == 0 {
+		logger.Zap().Info("weather_job", zap.String("msg", "no job found"))
+		return
 	}
 
 	for _, city := range cities {
 		go func(c *entity.Cities) {
-			lat := strconv.FormatFloat(float64(c.Lat), 'f', 11, 64)
-			lon := strconv.FormatFloat(float64(c.Lon), 'f', 11, 64)
+			lat := strconv.FormatFloat(float64(c.Lat), 'f', 11, 32)
+			lon := strconv.FormatFloat(float64(c.Lon), 'f', 11, 32)
 
 			data, err := j.meteo.FetchLocationWeather(c.ID.String(), lat, lon)
 			if err != nil {
-				panic(err)
+				logger.Zap().Error("weather_job", zap.Error(err))
 			}
 
 			// TODO: create function for converting object
@@ -57,7 +62,7 @@ func (j *WeatherJob) Run() {
 			weather.CloudCover = &data.Current.CloudCover
 
 			if err := j.repo.InsertWeatherJob(ctx, weather); err != nil {
-				panic(err)
+				logger.Zap().Error("weather_job", zap.Error(err))
 			}
 
 			logger.Zap().Info("weather_job", zap.String("msg", fmt.Sprintf("data %s sucessfully saved asynchronously", c.Name)))

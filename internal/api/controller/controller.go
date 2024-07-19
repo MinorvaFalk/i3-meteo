@@ -51,3 +51,17 @@ func (h *controller) FetchWeathersData(c *gin.Context) {
 		Data:    data,
 	})
 }
+
+func (h *controller) FetchCities(c *gin.Context) {
+	data, err := h.uc.FetchCities(c.Request.Context())
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, model.HTTPResponse{
+		Status:  http.StatusOK,
+		Message: "SUCCESS",
+		Data:    data,
+	})
+}

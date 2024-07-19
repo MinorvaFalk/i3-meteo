@@ -1,18 +1,17 @@
 package meteo
 
 import (
-	"context"
-	"encoding/json"
 	"i3/config"
 	"i3/pkg/datasource"
-	"i3/pkg/logger"
 	"net/http"
 	"time"
 )
 
 type Meteo interface {
 	FetchLocationWeather(id, lat, lon string) (*Weather, error)
-	FetchNearestPlace(lat, lon string) (*Place, error)
+	FetchNearestPlace(id, lat, lon string) (*Place, error)
+	FetchPlacesPrefix(id, text string) (Places, error)
+	FetchPlaces(id, text string) (Places, error)
 }
 
 type meteo struct {
@@ -37,65 +36,55 @@ func New(redis datasource.Redis) Meteo {
 
 func (m *meteo) FetchLocationWeather(id, lat, lon string) (*Weather, error) {
 	var data Weather
-	if err := m.checkRedisCache(id, &data); err == nil {
-		return &data, nil
+	params := map[string]string{
+		"lat":   lat,
+		"lon":   lon,
+		"units": "metric",
 	}
 
-	req, err := http.NewRequest(http.MethodGet, m.url+"/point", nil)
-	if err != nil {
+	if err := m.fetchMeteoData(id+":weather", "/point", params, &data); err != nil {
 		return nil, err
 	}
-
-	q := m.setDefaultParams(req.URL.Query())
-	q.Add("lat", lat)
-	q.Add("lon", lon)
-	req.URL.RawQuery = q.Encode()
-
-	exp, err := m.doRequest(req, &data)
-	if err != nil {
-		return nil, err
-	}
-
-	m.mustSaveRedisCache(id, data, exp)
 
 	return &data, nil
 }
 
-func (m *meteo) FetchNearestPlace(lat, lon string) (*Place, error) {
-	req, err := http.NewRequest(http.MethodGet, m.url+"/nearest_place", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	q := m.setDefaultParams(req.URL.Query())
-	q.Add("lat", lat)
-	q.Add("lon", lat)
-	req.URL.RawQuery = q.Encode()
-
+func (m *meteo) FetchNearestPlace(id, lat, lon string) (*Place, error) {
 	var data Place
-	_, err = m.doRequest(req, &data)
-	if err != nil {
+	params := map[string]string{
+		"lat": lat,
+		"lon": lon,
+	}
+
+	if err := m.fetchMeteoData(id+":nearest_place", "/nearest_place", params, &data); err != nil {
 		return nil, err
 	}
 
 	return &data, nil
 }
 
-func (m *meteo) checkRedisCache(key string, v any) error {
-	res, err := m.redis.Get(context.Background(), key)
-	if err != nil {
-		return err
+func (m *meteo) FetchPlacesPrefix(id, text string) (Places, error) {
+	var data Places
+	params := map[string]string{
+		"text": text,
 	}
 
-	if err := json.Unmarshal([]byte(res), v); err != nil {
-		return err
+	if err := m.fetchMeteoData(id+":places_prefix", "/find_places_prefix", params, &data); err != nil {
+		return nil, err
 	}
 
-	return nil
+	return data, nil
 }
 
-func (m *meteo) mustSaveRedisCache(key string, v any, exp time.Duration) {
-	if _, err := m.redis.Set(context.Background(), key, v, exp); err != nil {
-		logger.Zap().Sugar().Error(err)
+func (m *meteo) FetchPlaces(id, text string) (Places, error) {
+	var data Places
+	params := map[string]string{
+		"text": text,
 	}
+
+	if err := m.fetchMeteoData(id+":places", "/find_places", params, &data); err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

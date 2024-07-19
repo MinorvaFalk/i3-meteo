@@ -35,6 +35,7 @@ func main() {
 
 	s := scheduler.New()
 	s.ScheduleJob(1*time.Minute, scheduler.NewWeatherJob(meteo, repo))
+	s.ScheduleJob(2*time.Minute, scheduler.NewPlaceJob(meteo, repo))
 	s.Start()
 
 	// Router
@@ -43,7 +44,7 @@ func main() {
 
 	s.Stop()
 
-	// Graceful implementation
+	// Graceful Shutdown implementation
 
 	// srv := &http.Server{
 	// 	Addr:    ":" + config.ReadConfig().Port,

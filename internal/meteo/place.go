@@ -1,5 +1,13 @@
 package meteo
 
+import "encoding/json"
+
+type Places []Place
+
+func (p Places) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(p)
+}
+
 type Place struct {
 	Name     string `json:"name"`
 	PlaceId  string `json:"place_id"`
@@ -10,4 +18,8 @@ type Place struct {
 	Lon      string `json:"lon"`
 	Timezone string `json:"timezone"`
 	Type     string `json:"type"`
+}
+
+func (p Place) MarshalBinary() (data []byte, err error) {
+	return json.Marshal(p)
 }

@@ -28,7 +28,7 @@ type WeatherCurrent struct {
 	Temperature   float32       `json:"temperature"`
 	Wind          Wind          `json:"wind"`
 	Precipitation Precipitation `json:"precipitation"`
-	CloudCover    int           `json:"cloud_cover"`
+	CloudCover    float32       `json:"cloud_cover"`
 }
 
 type WeatherHourly struct {
@@ -76,5 +76,5 @@ type Precipitation struct {
 }
 
 type CloudCover struct {
-	Total int `json:"total"`
+	Total float32 `json:"total"`
 }
