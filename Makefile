@@ -26,8 +26,11 @@ redis:
 		redis:alpine
 
 build:
-	go mod tidy &&
-	docker build -f ./infra/Dockerfile -t i3-meteo:0.0.0 .
+	go mod tidy && \
+	docker build -f ./docker/Dockerfile -t i3-meteo:0.0.0 .
 
-compose:
-	docker compose -p i3-meteo -f infra/docker-compose.yml up -d
+compose-up:
+	docker compose -p i3-meteo up -d
+
+compose-down:
+	docker compose -p i3-meteo down
