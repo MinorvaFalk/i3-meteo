@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 
@@ -19,7 +18,6 @@ var (
 func main() {
 	flags.Parse(os.Args[1:])
 	args := flags.Args()
-	fmt.Println(args)
 
 	driver, dbstring := os.Getenv("GOOSE_DRIVER"), os.Getenv("GOOSE_DBSTRING")
 	command := args[0]
